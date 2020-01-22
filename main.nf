@@ -3,7 +3,7 @@ nextflow.preview.dsl=2
 
 /*
 Nextflow -- Analysis Pipeline
-Author: someone@gmail.com
+Author: hoelzer.martin@gmail.com
 */
 
 /************************** 
@@ -41,6 +41,11 @@ if (params.db == '' &&  params.names == '' ) { exit 1, "input missing, use [--db
 * INPUT CHANNELS 
 **************************/
 
+db = file(params.db)
+
+names = file(params.names)
+    .readLines()
+    .each{it}
 
 
 /************************** 
@@ -49,7 +54,8 @@ if (params.db == '' &&  params.names == '' ) { exit 1, "input missing, use [--db
 
 /* Comment section: */
 
-include './modules/mash' params(output: params.output)
+include sketch from './modules/mash' 
+include screen from './modules/mash' params(output: params.output)
 
 
 /************************** 
@@ -59,7 +65,13 @@ include './modules/mash' params(output: params.output)
 /* Comment section: */
 
 workflow {
+  reads = Channel.fromSRA(names, apiKey: params.key, max: 10)
 
+  // Create a MinHash signature/ sketch of the reference collection
+  sketch(db)
+
+  // Search k-mers of read set against this signature
+  screen(sketch.out, reads)
 }
 
 
@@ -82,8 +94,8 @@ def helpMSG() {
     nextflow run wf_template --nano '*/*.fastq' 
 
     ${c_yellow}Input:${c_reset}
-    ${c_green} --db ${c_reset}            fasta 
-    ${c_green} --names ${c_reset}         txt
+    ${c_green} --db ${c_reset}            fasta [default: $params.db]
+    ${c_green} --names ${c_reset}         txt [default: $params.names]
 
     ${c_yellow}Options:${c_reset}
     --cores             max cores for local use [default: $params.cores]
@@ -91,8 +103,7 @@ def helpMSG() {
     --output            name of the result folder [default: $params.output]
 
     ${c_yellow}Parameters:${c_reset}
-    --variable1             a variable [default: $params.variable1]
-    --variable2             a variable [default: $params.variable2]
+    --key             NCBI ket [default: $params.key]
 
     ${c_dim}Nextflow options:
     -with-report rep.html    cpu / ram usage (may cause errors)
@@ -110,10 +121,7 @@ def helpMSG() {
     -profile                 standard (local, pure docker) [default]
                              conda (mixes conda and docker)
                              lsf (HPC w/ LSF, singularity/docker)
-                             nanozoo (googlegenomics and docker)  
-                             gcloudAdrian (googlegenomics and docker)
-                             gcloudChris (googlegenomics and docker)
-                             gcloudMartin (googlegenomics and docker)
+                             ebi (HPC w/ LSF, singularity/docker)
                              ${c_reset}
     """.stripIndent()
 }
