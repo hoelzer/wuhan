@@ -30,7 +30,7 @@ process screen {
 
     """
     echo ${reads}
-    mash screen -w -p ${task.cores} -i 0 ${sketch} ${reads} > ${uid}.screen.csv
+    mash screen -w -p ${task.cpus} -i 0 ${sketch} ${reads} > ${uid}.screen.csv
     """
     // Streaming from 2 inputs ...
     // "reads" is a list of all fastq files nf finds for each SRA ID,
