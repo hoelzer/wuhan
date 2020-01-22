@@ -35,34 +35,13 @@ println "Output dir name: $params.output\u001B[0m"
 println " "}
 
 if (params.profile) { exit 1, "--profile is WRONG use -profile" }
-if (params.nano == '' &&  params.illumina == '' ) { exit 1, "input missing, use [--nano] or [--illumina]"}
+if (params.db == '' &&  params.names == '' ) { exit 1, "input missing, use [--db] or [--names]"}
 
 /************************** 
 * INPUT CHANNELS 
 **************************/
 
-// nanopore reads input & --list support
-if (params.nano && params.list) { nano_input_ch = Channel
-  .fromPath( params.nano, checkIfExists: true )
-  .splitCsv()
-  .map { row -> ["${row[0]}", file("${row[1]}", checkIfExists: true)] }
-  .view() }
-  else if (params.nano) { nano_input_ch = Channel
-    .fromPath( params.nano, checkIfExists: true)
-    .map { file -> tuple(file.baseName, file) }
-    .view()
-}
 
-// illumina reads input & --list support
-if (params.illumina && params.list) { illumina_input_ch = Channel
-  .fromPath( params.illumina, checkIfExists: true )
-  .splitCsv()
-  .map { row -> ["${row[0]}", [file("${row[1]}", checkIfExists: true), file("${row[2]}", checkIfExists: true)]] }
-  .view() }
-  else if (params.illumina) { illumina_input_ch = Channel
-  .fromFilePairs( params.illumina , checkIfExists: true )
-  .view() 
-}
 
 /************************** 
 * MODULES
@@ -70,48 +49,8 @@ if (params.illumina && params.list) { illumina_input_ch = Channel
 
 /* Comment section: */
 
-include './modules/get_db' params(cloudProcess: params.cloudProcess, cloudDatabase: params.cloudDatabase)
-include './modules/module1' params(output: params.output, variable1: params.variable1)
-include './modules/module2' params(output: params.output, variable2: params.variable2)
+include './modules/mash' params(output: params.output)
 
-
-/************************** 
-* DATABASES
-**************************/
-
-/* Comment section:
-The Database Section is designed to "auto-get" pre prepared databases.
-It is written for local use and cloud use via params.cloudProcess.
-*/
-
-workflow download_db {
-  main:
-    // local storage via storeDir
-    if (!params.cloudProcess) { example_db(); db = example_db.out }
-    // cloud storage via db_preload.exists()
-    if (params.cloudProcess) {
-      db_preload = file("${params.cloudDatabase}/test_db/Chlamydia_gallinacea_08_1274_3.ASM47102v2.dna.toplevel.fa.gz")
-      if (db_preload.exists()) { db = db_preload }
-      else  { example_db(); db = example_db.out } 
-    }
-  emit: db
-}
-
-
-/************************** 
-* SUB WORKFLOWS
-**************************/
-
-/* Comment section: */
-
-workflow subworkflow_1 {
-  get: 
-    nano_input_ch
-    db
-
-  main:
-    module2(module1(nano_input_ch, db))
-} 
 
 /************************** 
 * WORKFLOW ENTRY POINT
@@ -120,11 +59,7 @@ workflow subworkflow_1 {
 /* Comment section: */
 
 workflow {
-      download_db()
-      db = download_db.out
-      if (params.nano && !params.illumina) { 
-        subworkflow_1(nano_input_ch, db)
-      }
+
 }
 
 
@@ -147,9 +82,8 @@ def helpMSG() {
     nextflow run wf_template --nano '*/*.fastq' 
 
     ${c_yellow}Input:${c_reset}
-    ${c_green} --nano ${c_reset}            '*.fasta' or '*.fastq.gz'   -> one sample per file
-    ${c_green} --illumina ${c_reset}        '*.R{1,2}.fastq.gz'         -> file pairs
-    ${c_dim}  ..change above input to csv:${c_reset} ${c_green}--list ${c_reset}            
+    ${c_green} --db ${c_reset}            fasta 
+    ${c_green} --names ${c_reset}         txt
 
     ${c_yellow}Options:${c_reset}
     --cores             max cores for local use [default: $params.cores]
