@@ -54,7 +54,7 @@ names = file(params.names)
 
 /* Comment section: */
 
-include sketch from './modules/mash' 
+include sketch from './modules/mash' params(ksize: params.ksize)
 include screen from './modules/mash' params(output: params.output)
 
 
@@ -104,6 +104,7 @@ def helpMSG() {
 
     ${c_yellow}Parameters:${c_reset}
     --key             NCBI ket [default: $params.key]
+    --ksize           mash kmer size [default: $params.ksize]
 
     ${c_dim}Nextflow options:
     -with-report rep.html    cpu / ram usage (may cause errors)

@@ -11,7 +11,7 @@ process sketch {
     file("db.msh")
 
     """
-    mash sketch -p ${task.cpus} -i -s 1000 -k 15 -S 42 -o db.msh ${db}
+    mash sketch -p ${task.cpus} -i -s 1000 -k ${params.ksize} -S 42 -o db.msh ${db}
     """
 }
 
