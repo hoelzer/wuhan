@@ -29,6 +29,7 @@ process screen {
     file("${uid}.screen.csv")
 
     """
+    sleep 30s
     echo ${reads}
     mash screen -w -p ${task.cpus} -i 0 ${sketch} ${reads} > ${uid}.screen.csv
     """
