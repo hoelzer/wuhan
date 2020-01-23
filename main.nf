@@ -65,7 +65,7 @@ include screen from './modules/mash' params(output: params.output)
 /* Comment section: */
 
 workflow {
-  reads = Channel.fromSRA(names, apiKey: params.key, max: 10)
+  reads = Channel.fromSRA(names, apiKey: params.key)
 
   // Create a MinHash signature/ sketch of the reference collection
   sketch(db)
